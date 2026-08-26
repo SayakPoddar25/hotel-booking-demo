@@ -1,0 +1,274 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Complete Your Booking - ÉCLAT Hotels{% endblock %}
+
+{% block content %}
+<style>
+    .booking-container {
+        padding-top: 120px;
+        min-height: 100vh;
+        background: var(--gray-light);
+        padding-bottom: 60px;
+    }
+    .booking-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 40px;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 20px;
+    }
+    .booking-form-card, .booking-summary-card {
+        background: white;
+        border-radius: 24px;
+        padding: 35px;
+        box-shadow: var(--shadow-md);
+    }
+    .booking-form-card h2, .booking-summary-card h2 {
+        color: var(--primary);
+        margin-bottom: 25px;
+        font-size: 1.8rem;
+    }
+    .form-group {
+        margin-bottom: 20px;
+    }
+    .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: var(--primary);
+    }
+    .form-group input, .form-group select, .form-group textarea {
+        width: 100%;
+        padding: 12px 16px;
+        border: 2px solid #e0e0e0;
+        border-radius: 12px;
+        font-size: 1rem;
+        transition: var(--transition);
+    }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+        border-color: var(--accent);
+        outline: none;
+    }
+    .summary-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 15px 0;
+        border-bottom: 1px solid #eee;
+    }
+    .summary-item.total {
+        border-top: 2px solid var(--accent);
+        border-bottom: none;
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: var(--accent);
+        margin-top: 15px;
+        padding-top: 20px;
+    }
+    .room-detail {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 16px;
+        margin-bottom: 20px;
+    }
+    .room-detail h3 {
+        color: var(--primary);
+        margin-bottom: 10px;
+    }
+    .btn-pay {
+        width: 100%;
+        background: var(--accent);
+        color: var(--primary);
+        padding: 16px;
+        border: none;
+        border-radius: 12px;
+        font-size: 1.1rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: var(--transition);
+        margin-top: 20px;
+    }
+    .btn-pay:hover {
+        background: var(--accent-light);
+        transform: translateY(-2px);
+    }
+    .btn-pay:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+    .date-range {
+        background: var(--primary);
+        color: white;
+        padding: 15px;
+        border-radius: 12px;
+        margin: 20px 0;
+        text-align: center;
+    }
+    .plan-badge {
+        display: inline-block;
+        background: var(--accent);
+        color: var(--primary);
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        margin-top: 10px;
+    }
+    .promo-section {
+        display: flex;
+        gap: 10px;
+        margin-top: 20px;
+    }
+    .promo-section input {
+        flex: 1;
+    }
+    .btn-apply {
+        background: var(--primary);
+        color: white;
+        padding: 12px 20px;
+        border: none;
+        border-radius: 12px;
+        cursor: pointer;
+    }
+    .field-error {
+        color: #dc3545;
+        font-size: 0.8rem;
+        margin-top: 5px;
+        display: block;
+    }
+    @media (max-width: 768px) {
+        .booking-grid {
+            grid-template-columns: 1fr;
+            gap: 30px;
+        }
+        .booking-form-card, .booking-summary-card {
+            padding: 25px;
+        }
+    }
+</style>
+
+<div class="booking-container">
+    <div class="booking-grid">
+        <!-- Booking Form -->
+        <div class="booking-form-card">
+            <h2><i class="fas fa-user-check"></i> Guest Details</h2>
+            <form id="bookingForm" method="POST">
+                {% csrf_token %}
+                
+                <!-- Hidden fields for booking data -->
+                <input type="hidden" name="room_id" id="roomId" value="{{ room.id }}">
+                <input type="hidden" name="plan_id" id="planId" value="{{ plan.id|default:'' }}">
+                <input type="hidden" name="check_in" id="checkInDate" value="{{ check_in }}">
+                <input type="hidden" name="check_out" id="checkOutDate" value="{{ check_out }}">
+                <input type="hidden" name="guests" id="guestsCount" value="{{ guests }}">
+                <input type="hidden" name="room_price" id="roomPrice" value="{{ room.price_base }}">
+                <input type="hidden" name="plan_price" id="planPrice" value="{{ plan.price_modifier|default:'0' }}">
+                <input type="hidden" name="nights" id="nights" value="{{ nights }}">
+                
+                <div class="form-group">
+                    <label><i class="fas fa-user"></i> Full Name *</label>
+                    <input type="text" name="guest_name" id="guestName" required placeholder="Enter your full name">
+                </div>
+                
+                <div class="form-group">
+                    <label><i class="fas fa-envelope"></i> Email Address *</label>
+                    <input type="email" name="guest_email" id="guestEmail" required placeholder="your@email.com">
+                </div>
+                
+                <div class="form-group">
+                    <label><i class="fas fa-phone"></i> Phone Number *</label>
+                    <input type="tel" name="guest_phone" id="guestPhone" required placeholder="+1 234 567 8900">
+                </div>
+                
+                <div class="form-group">
+                    <label><i class="fas fa-pen"></i> Special Requests (Optional)</label>
+                    <textarea name="special_requests" id="specialRequests" rows="3" placeholder="Any special requirements or requests..."></textarea>
+                </div>
+                
+                <div class="promo-section">
+                    <div class="form-group" style="flex: 1; margin-bottom: 0;">
+                        <input type="text" id="promoCode" placeholder="Enter promo code">
+                    </div>
+                    <button type="button" id="applyPromo" class="btn-apply">Apply</button>
+                </div>
+                
+                <button type="button" id="paymentBtn" class="btn-pay">
+                    <i class="fas fa-lock"></i> Proceed to Payment
+                </button>
+            </form>
+        </div>
+        
+        <!-- Booking Summary -->
+        <div class="booking-summary-card">
+            <h2><i class="fas fa-receipt"></i> Booking Summary</h2>
+            
+            <div class="room-detail">
+                <h3>{{ room.get_room_type_display }}</h3>
+                <p><i class="fas fa-bed"></i> {{ room.bed_type }} Bed</p>
+                <p><i class="fas fa-arrows-alt"></i> {{ room.size_sqm }} sqm</p>
+                <p><i class="fas fa-users"></i> Sleeps {{ room.capacity }} guests</p>
+                {% if plan %}
+                <span class="plan-badge">{{ plan.title }}</span>
+                {% endif %}
+            </div>
+            
+            <div class="date-range">
+                <i class="fas fa-calendar-alt"></i>
+                <strong>{{ check_in }}</strong> to <strong>{{ check_out }}</strong>
+                <br>
+                <small>({{ nights }} nights)</small>
+            </div>
+            
+            <div class="summary-item">
+                <span>Room Rate (Inr{{ room.price_base }}/night)</span>
+                <span id="subtotal">Inr{{ room.price_base }} × {{ nights }}</span>
+            </div>
+            
+            {% if plan %}
+            <div class="summary-item">
+                <span>{{ plan.title }} (${{ plan.price_modifier }}/night)</span>
+                <span>${{ plan.price_modifier }} × {{ nights }}</span>
+            </div>
+            {% endif %}
+            
+            <div class="summary-item" id="discountLine" style="display: none;">
+                <span>Discount</span>
+                <span id="discountAmount">-0</span>
+            </div>
+            
+            <div class="summary-item">
+                <span>Taxes & Fees (18%)</span>
+                <span id="taxAmount">$0</span>
+            </div>
+            
+            <div class="summary-item total">
+                <span>Total Amount</span>
+                <span id="totalAmount">$0</span>
+            </div>
+            
+            <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 12px;">
+                <small>
+                    <i class="fas fa-shield-alt"></i> Secure payment via Razorpay<br>
+                    <i class="fas fa-check-circle"></i> Free cancellation within 24 hours<br>
+                    <i class="fas fa-headset"></i> 24/7 Customer Support
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script src="{% static 'js/booking.js' %}"></script>
+<script>
+    // Initial calculation when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        // Trigger price calculation
+        if (typeof calculateTotal === 'function') {
+            calculateTotal();
+        }
+    });
+</script>
+{% endblock %}

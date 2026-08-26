@@ -1,0 +1,294 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Admin Dashboard - ÉCLAT Hotels{% endblock %}
+
+{% block content %}
+<style>
+    .admin-container {
+        padding-top: 100px;
+        min-height: 100vh;
+        background: var(--gray-light);
+    }
+    .admin-sidebar {
+        background: var(--primary);
+        color: white;
+        padding: 2rem;
+        border-radius: 20px;
+        position: sticky;
+        top: 100px;
+    }
+    .admin-sidebar a {
+        color: white;
+        display: block;
+        padding: 12px 0;
+        text-decoration: none;
+        transition: var(--transition);
+    }
+    .admin-sidebar a:hover, .admin-sidebar a.active {
+        color: var(--accent);
+        padding-left: 10px;
+    }
+    .admin-sidebar i {
+        width: 25px;
+        margin-right: 10px;
+    }
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+        margin-bottom: 40px;
+    }
+    .stat-card {
+        background: white;
+        padding: 25px;
+        border-radius: 20px;
+        text-align: center;
+        box-shadow: var(--shadow-sm);
+        transition: var(--transition);
+        cursor: pointer;
+    }
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: var(--shadow-md);
+    }
+    .stat-card i {
+        font-size: 2.5rem;
+        color: var(--accent);
+        margin-bottom: 15px;
+    }
+    .stat-card h3 {
+        font-size: 2rem;
+        margin: 10px 0;
+    }
+    .charts-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 30px;
+        margin-bottom: 40px;
+    }
+    .chart-card {
+        background: white;
+        border-radius: 20px;
+        padding: 25px;
+        box-shadow: var(--shadow-sm);
+    }
+    .chart-card h3 {
+        margin-bottom: 20px;
+        color: var(--primary);
+    }
+    .chart-container {
+        height: 300px;
+        position: relative;
+    }
+    .recent-bookings {
+        background: white;
+        border-radius: 20px;
+        padding: 25px;
+        box-shadow: var(--shadow-sm);
+    }
+    .booking-table {
+        width: 100%;
+        overflow-x: auto;
+    }
+    .booking-table table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    .booking-table th, .booking-table td {
+        padding: 12px;
+        text-align: left;
+        border-bottom: 1px solid #eee;
+    }
+    .booking-table th {
+        background: var(--primary);
+        color: white;
+    }
+    .status-badge {
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        display: inline-block;
+    }
+    .status-confirmed { background: #28a745; color: white; }
+    .status-pending { background: #ffc107; color: #333; }
+    .status-cancelled { background: #dc3545; color: white; }
+    .status-completed { background: #17a2b8; color: white; }
+    .admin-grid {
+        display: grid;
+        grid-template-columns: 280px 1fr;
+        gap: 30px;
+    }
+    .btn-export {
+        background: var(--accent);
+        color: var(--primary);
+        padding: 10px 20px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        margin-bottom: 20px;
+    }
+    @media (max-width: 768px) {
+        .admin-grid {
+            grid-template-columns: 1fr;
+        }
+        .charts-grid {
+            grid-template-columns: 1fr;
+        }
+        .admin-sidebar {
+            position: static;
+            margin-bottom: 20px;
+        }
+    }
+</style>
+
+<div class="admin-container">
+    <div class="container">
+        <div class="admin-grid">
+            <!-- Sidebar -->
+            <div class="admin-sidebar">
+                <h3 style="margin-bottom: 30px; color: var(--accent);">Admin Panel</h3>
+                <a href="/admin-dashboard/" class="active"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+                <a href="/admin-rooms/"><i class="fas fa-hotel"></i> Manage Rooms</a>
+                <a href="/admin-bookings/"><i class="fas fa-calendar-check"></i> Manage Bookings</a>
+                <a href="/logout/"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            </div>
+
+            <!-- Main Content -->
+            <div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+                    <h1>Welcome back, {{ user.username }}!</h1>
+                    <button id="exportData" class="btn-export"><i class="fas fa-download"></i> Export Report</button>
+                </div>
+                
+                <!-- Stats Cards -->
+                <div class="stats-grid">
+                    <div class="stat-card" data-stat="total">
+                        <i class="fas fa-calendar-check"></i>
+                        <h3 id="totalBookings">{{ total_bookings }}</h3>
+                        <p>Total Bookings</p>
+                    </div>
+                    <div class="stat-card" data-stat="confirmed">
+                        <i class="fas fa-check-circle"></i>
+                        <h3 id="confirmedBookings">{{ confirmed_bookings }}</h3>
+                        <p>Confirmed Bookings</p>
+                    </div>
+                    <div class="stat-card" data-stat="pending">
+                        <i class="fas fa-clock"></i>
+                        <h3 id="pendingPayments">{{ pending_payments }}</h3>
+                        <p>Pending Payments</p>
+                    </div>
+                    <div class="stat-card" data-stat="revenue">
+                        <i class="fas fa-rupee-sign"></i>
+                        <h3 id="totalRevenue">INR {{ total_revenue|floatformat:2 }}</h3>
+                        <p>Total Revenue</p>
+                    </div>
+                </div>
+                <!-- === NEW ADDITION: Daily Room Inventory (Check Capacity) === -->
+                <div class="chart-card" style="margin-bottom: 40px; background: white; padding: 25px; border-radius: 20px; box-shadow: var(--shadow-sm);">
+                    <h3 style="margin-bottom: 20px; color: var(--primary);">
+                        <i class="fas fa-calendar-alt"></i> Daily Room Inventory (Check Status)
+                    </h3>
+                    <div style="display: flex; gap: 15px; margin-bottom: 25px; align-items: center; flex-wrap: wrap;">
+                        <label for="inventoryDate" style="font-weight: 600;">Select Date:</label>
+                        <input type="date" id="inventoryDate" class="form-control" style="padding: 10px; border-radius: 8px; border: 2px solid #e0e0e0; outline: none;">
+                        <button id="checkInventoryBtn" class="btn-export" style="margin-bottom: 0;">
+                            <i class="fas fa-search"></i> Check Availability
+                        </button>
+                    </div>
+                    
+                    <div id="inventoryResults" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px;">
+                        <!-- Results injected by JavaScript -->
+                    </div>
+                </div>
+
+                <!-- Charts -->
+                <div class="charts-grid">
+                    <div class="chart-card">
+                        <h3>Revenue Trend</h3>
+                        <div class="chart-container">
+                            <canvas id="revenueChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-card">
+                        <h3>Booking Status Distribution</h3>
+                        <div class="chart-container">
+                            <canvas id="statusChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Bookings -->
+                <div class="recent-bookings">
+                    <h3 style="margin-bottom: 20px;">Recent Bookings</h3>
+                    <div class="booking-table">
+                        <table id="bookingsTable">
+                            <thead>
+                                <tr>
+                                    <th><input type="checkbox" id="selectAll"></th>
+                                    <th>ID</th>
+                                    <th>Guest</th>
+                                    <th>Room</th>
+                                    <th>Check In</th>
+                                    <th>Check Out</th>
+                                    <th>Total</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for booking in recent_bookings %}
+                                <tr data-booking-id="{{ booking.id }}">
+                                    <td><input type="checkbox" class="booking-checkbox" value="{{ booking.id }}"></td>
+                                    <td>#{{ booking.id }}</td>
+                                    <td>{{ booking.guest_name }}</td>
+                                    <td>{{ booking.room.room_number }}</td>
+                                    <td>{{ booking.check_in }}</td>
+                                    <td>{{ booking.check_out }}</td>
+                                    <td>${{ booking.total_price }}</td>
+                                    <td><span class="status-badge status-{{ booking.status }}">{{ booking.status }}</span></td>
+                                    <td>
+                                        <select class="status-update" data-id="{{ booking.id }}" style="padding: 5px; border-radius: 5px;">
+                                            <option value="pending" {% if booking.status == 'pending' %}selected{% endif %}>Pending</option>
+                                            <option value="confirmed" {% if booking.status == 'confirmed' %}selected{% endif %}>Confirm</option>
+                                            <option value="cancelled" {% if booking.status == 'cancelled' %}selected{% endif %}>Cancel</option>
+                                            <option value="completed" {% if booking.status == 'completed' %}selected{% endif %}>Complete</option>
+                                        </select>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr><td colspan="9" style="text-align: center;">No bookings yet</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- Bulk Actions -->
+                    <div style="margin-top: 20px; display: flex; gap: 10px; align-items: center;">
+                        <select id="bulkAction" style="padding: 10px; border-radius: 8px;">
+                            <option value="">Bulk Actions</option>
+                            <option value="confirm">Confirm Selected</option>
+                            <option value="cancel">Cancel Selected</option>
+                            <option value="delete">Delete Selected</option>
+                        </select>
+                        <button id="applyBulk" class="btn-export">Apply</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="{% static 'js/admin.js' %}"></script>
+<script>
+    // Pass data to admin.js
+    window.revenueData = [12000, 15000, 18000, 22000, 28000, 35000, 42000, 48000, 52000, 58000, 62000, 70000];
+    window.bookingStatusData = [45, 23, 12, 20];
+    window.csrfToken = "{{ csrf_token }}";
+</script>
+{% endblock %}

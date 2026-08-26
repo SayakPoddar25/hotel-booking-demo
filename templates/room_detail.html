@@ -1,0 +1,383 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ room.get_room_type_display }} - ÉCLAT Hotels{% endblock %}
+
+{% block content %}
+<style>
+    .room-details-container {
+        padding-top: 120px;
+        padding-bottom: 80px;
+        background: var(--gray-light);
+    }
+    .room-detail-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 50px;
+        margin-bottom: 60px;
+    }
+    .detail-slider {
+        position: relative;
+    }
+    .main-slider {
+        position: relative;
+        border-radius: 24px;
+        overflow: hidden;
+        margin-bottom: 20px;
+    }
+    .main-slider img {
+        width: 100%;
+        height: 500px;
+        object-fit: cover;
+    }
+    .slider-nav {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        background: rgba(0,0,0,0.5);
+        color: white;
+        border: none;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        cursor: pointer;
+        transition: var(--transition);
+    }
+    .slider-nav:hover {
+        background: var(--accent);
+    }
+    .slider-prev {
+        left: 20px;
+    }
+    .slider-next {
+        right: 20px;
+    }
+    .thumbnail-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 15px;
+    }
+    .thumbnail {
+        width: 100%;
+        height: 100px;
+        object-fit: cover;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: var(--transition);
+    }
+    .thumbnail:hover, .thumbnail.active {
+        transform: scale(1.05);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    }
+    .detail-info h1 {
+        color: var(--primary);
+        margin-bottom: 15px;
+    }
+    .room-price-large {
+        font-size: 2rem;
+        color: var(--accent);
+        font-weight: 700;
+        margin-bottom: 20px;
+    }
+    .amenities-list {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 15px;
+        margin: 20px 0;
+        list-style: none;
+    }
+    .amenities-list li {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .amenities-list li i {
+        color: var(--accent);
+    }
+    .pricing-options {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 25px;
+        margin: 40px 0;
+    }
+    .plan-card {
+        background: white;
+        border-radius: 20px;
+        padding: 25px;
+        cursor: pointer;
+        transition: var(--transition);
+        border: 2px solid transparent;
+        position: relative;
+    }
+    .plan-card:hover {
+        transform: translateY(-5px);
+        box-shadow: var(--shadow-md);
+    }
+    .plan-card.selected {
+        border-color: var(--accent);
+        background: linear-gradient(135deg, #fff, #fffef7);
+        box-shadow: var(--shadow-lg);
+    }
+    .plan-card.selected::before {
+        content: '✓';
+        position: absolute;
+        top: -10px;
+        right: -10px;
+        background: var(--accent);
+        color: var(--primary);
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+    }
+    .plan-title {
+        font-size: 1.3rem;
+        font-weight: 700;
+        margin-bottom: 10px;
+        color: var(--primary);
+    }
+    .plan-price {
+        font-size: 1.8rem;
+        color: var(--accent);
+        font-weight: 700;
+        margin: 15px 0;
+    }
+    .plan-price small {
+        font-size: 0.9rem;
+        color: var(--gray-mid);
+    }
+    .plan-benefit {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin: 10px 0;
+        color: var(--gray-mid);
+    }
+    .booking-summary {
+        background: white;
+        border-radius: 24px;
+        padding: 35px;
+        margin-top: 40px;
+        box-shadow: var(--shadow-md);
+    }
+    .booking-summary h3 {
+        color: var(--primary);
+        margin-bottom: 25px;
+    }
+    .booking-form-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 20px;
+    }
+    .form-group {
+        margin-bottom: 20px;
+    }
+    .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: var(--primary);
+    }
+    .form-group input {
+        width: 100%;
+        padding: 12px 16px;
+        border: 2px solid #e0e0e0;
+        border-radius: 12px;
+        font-size: 1rem;
+    }
+    .form-group input:focus {
+        border-color: var(--accent);
+        outline: none;
+    }
+    .availability-status {
+        margin: 20px 0;
+        padding: 15px;
+        border-radius: 12px;
+        text-align: center;
+        font-weight: 500;
+    }
+    .btn-book-now {
+        width: 100%;
+        background: var(--accent);
+        color: var(--primary);
+        padding: 16px;
+        border: none;
+        border-radius: 12px;
+        font-size: 1.1rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: var(--transition);
+        margin-top: 20px;
+    }
+    .btn-book-now:hover:not(:disabled) {
+        background: var(--accent-light);
+        transform: translateY(-2px);
+    }
+    .btn-book-now:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+    .total-price {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--accent);
+        text-align: right;
+        margin-top: 20px;
+        padding-top: 20px;
+        border-top: 2px solid #eee;
+    }
+    @media (max-width: 768px) {
+        .room-detail-grid {
+            grid-template-columns: 1fr;
+            gap: 30px;
+        }
+        .pricing-options {
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+        .booking-form-grid {
+            grid-template-columns: 1fr;
+        }
+        .main-slider img {
+            height: 300px;
+        }
+    }
+</style>
+
+<div class="room-details-container">
+    <div class="container">
+        <!-- Room Gallery and Info Grid -->
+        <div class="room-detail-grid">
+            <!-- Gallery Section -->
+            <div class="detail-slider">
+                <div class="main-slider">
+                    <img id="mainImage" src="{{ room.images.first.image.url }}" alt="{{ room.get_room_type_display }}">
+                    <button class="slider-nav slider-prev" id="prevImage">❮</button>
+                    <button class="slider-nav slider-next" id="nextImage">❯</button>
+                </div>
+                <div class="thumbnail-grid" id="thumbnailGrid">
+                    {% for image in room.images.all %}
+                    <img src="{{ image.image.url }}" 
+                         class="thumbnail {% if forloop.first %}active{% endif %}" 
+                         data-full-image="{{ image.image.url }}"
+                         alt="Room view {{ forloop.counter }}">
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <!-- Info Section -->
+            <div class="detail-info">
+                <h1>{{ room.get_room_type_display }} - Room {{ room.room_number }}</h1>
+                <p class="room-price-large">INR{{ room.price_base }}<small>/night</small></p>
+                <p>{{ room.description }}</p>
+                
+                <h3>Amenities</h3>
+                <ul class="amenities-list">
+                    {% for amenity in room.get_amenities_list %}
+                    <li><i class="fas fa-check-circle"></i> {{ amenity }}</li>
+                    {% endfor %}
+                    <li><i class="fas fa-bed"></i> {{ room.bed_type }} Bed</li>
+                    <li><i class="fas fa-arrows-alt"></i> {{ room.size_sqm }} sqm</li>
+                    <li><i class="fas fa-users"></i> Sleeps {{ room.capacity }} guests</li>
+                    <li><i class="fas fa-eye"></i> {{ room.view_type }} View</li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- Pricing Options Section -->
+        <h2 style="text-align: center; margin-bottom: 30px;">Choose Your Plan</h2>
+        <div class="pricing-options" id="pricingOptions">
+            {% for plan in plans %}
+            <div class="plan-card" 
+                 data-plan-id="{{ plan.id }}" 
+                 data-price="{{ plan.price_modifier|floatformat:2 }}"
+                 data-base-price="{{ room.price_base|floatformat:2 }}">
+                <h3 class="plan-title">{{ plan.title }}</h3>
+                <p>{{ plan.description }}</p>
+                <div class="plan-price">
+                    INR{{ plan.price_modifier|floatformat:2 }}<small>/night</small>
+                </div>
+                {% if plan.breakfast_included %}
+                <div class="plan-benefit">
+                    <i class="fas fa-utensils"></i> Breakfast Included
+                </div>
+                {% endif %}
+                {% if plan.free_cancellation %}
+                <div class="plan-benefit">
+                    <i class="fas fa-calendar-times"></i> Free Cancellation ({{ plan.cancellation_days }} days)
+                </div>
+                {% endif %}
+            </div>
+            {% empty %}
+            <div class="plan-card" data-plan-id="" data-price="0">
+                <h3 class="plan-title">Room Only</h3>
+                <p>Standard rate with no additional benefits</p>
+                <div class="plan-price">INR 0<small>/night</small></div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Booking Form -->
+        <div class="booking-summary">
+            <h3>Book This Room</h3>
+            <form id="bookingForm" method="POST" action="/create-booking/">
+                {% csrf_token %}
+                
+                <!-- Hidden fields -->
+                <input type="hidden" name="room_id" id="roomId" value="{{ room.id }}">
+                <input type="hidden" name="plan_id" id="selectedPlanId" value="">
+                <input type="hidden" name="base_price" id="basePrice" value="{{ room.price_base }}">
+                
+                <div class="booking-form-grid">
+                    <div class="form-group">
+                        <label><i class="fas fa-calendar-alt"></i> Check-in Date</label>
+                        <input type="date" name="check_in" id="checkIn" required>
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-calendar-check"></i> Check-out Date</label>
+                        <input type="date" name="check_out" id="checkOut" required>
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-users"></i> Number of Guests</label>
+                        <input type="number" name="guests" id="guests" min="1" max="10" value="10" required>
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-user"></i> Full Name</label>
+                        <input type="text" name="guest_name" id="guestName" required>
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-envelope"></i> Email Address</label>
+                        <input type="email" name="guest_email" id="guestEmail" required>
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-phone"></i> Phone Number</label>
+                        <input type="tel" name="guest_phone" id="guestPhone" required>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label><i class="fas fa-pen"></i> Special Requests</label>
+                    <textarea name="special_requests" rows="3" style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 12px;"></textarea>
+                </div>
+                
+                <div id="availabilityStatus" class="availability-status"></div>
+                
+                <div class="total-price">
+                    Total Price: INR<span id="totalPrice">0</span>
+                </div>
+                
+                <button type="submit" id="bookNowBtn" class="btn-book-now" disabled>
+                    Proceed to Booking
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/room_detail.js' %}"></script>
+{% endblock %}

@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+    {% include 'partials/hero.html' %}
+    
+    <!-- Rest of the home page content -->
+    <section class="why-choose-us">...</section>
+    <section class="rooms-section">...</section>
+
+<!-- Why Choose Us -->
+<section class="why-choose-us">
+    <div class="container">
+        <h2 class="section-title">Why Choose Us</h2>
+        <div class="features-grid">
+            <div class="feature-card">
+                <i class="fas fa-crown feature-icon"></i>
+                <h3>Luxury Experience</h3>
+                <p>Premium amenities and world-class service</p>
+            </div>
+            <div class="feature-card">
+                <i class="fas fa-spa feature-icon"></i>
+                <h3>Spa & Wellness</h3>
+                <p>Rejuvenate your mind and body</p>
+            </div>
+            <div class="feature-card">
+                <i class="fas fa-utensils feature-icon"></i>
+                <h3>Fine Dining</h3>
+                <p>Exquisite culinary experiences</p>
+            </div>
+            <div class="feature-card">
+                <i class="fas fa-concierge-bell feature-icon"></i>
+                <h3>24/7 Service</h3>
+                <p>Round-the-clock assistance</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Rooms Section -->
+<section class="rooms-section">
+    <div class="container">
+        <h2 class="section-title">Luxurious Suites</h2>
+        <div class="rooms-grid">
+            {% for room in rooms %}
+            <div class="room-card" data-room-id="{{ room.id }}">
+                <div class="room-image-slider">
+                    <div class="slider-container">
+                        {% if room.images.all %}
+                        <img class="slider-image" src="{{ room.images.first.image.url }}" alt="{{ room.room_type }}">
+                        {% else %}
+                        <img class="slider-image" src="https://via.placeholder.com/400x300" alt="Room">
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="room-info">
+                    <h3 class="room-title">{{ room.get_room_type_display }}</h3>
+                    <p class="room-price">From ${{ room.price_base }}/night</p>
+                    <div class="room-amenities">
+                        <span class="amenity-icon"><i class="fas fa-bed"></i> {{ room.bed_type }}</span>
+                        <span class="amenity-icon"><i class="fas fa-arrows-alt"></i> {{ room.size_sqm }}m²</span>
+                        <span class="amenity-icon"><i class="fas fa-users"></i> {{ room.capacity }} Guests</span>
+                    </div>
+                    <a href="/room/{{ room.id }}/" class="btn-view-details">View Details</a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- Gallery Section -->
+<section class="gallery-section">
+    <div class="container">
+        <h2 class="section-title">Photo Gallery</h2>
+        <div class="gallery-grid">
+            {% for gallery in galleries %}
+            <div class="gallery-item">
+                <img src="{{ gallery.image.url }}" alt="{{ gallery.title }}">
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- Testimonials -->
+<section class="testimonials-section">
+    <div class="container">
+        <h2 class="section-title">Guest Reviews</h2>
+        <div class="testimonials-slider">
+            {% for testimonial in testimonials %}
+            <div class="testimonial-card">
+                <div class="rating">
+                    {% for i in "12345"|make_list %}
+                        {% if forloop.counter <= testimonial.rating %}★{% else %}☆{% endif %}
+                    {% endfor %}
+                </div>
+                <p>"{{ testimonial.review }}"</p>
+                <h4>- {{ testimonial.guest_name }}</h4>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- CTA Section -->
+<section class="cta-section">
+    <div class="container">
+        <h2>Book Your Stay Today</h2>
+        <p>Experience the pinnacle of luxury and comfort</p>
+        <a href="/rooms/" class="btn-cta">Reserve Now</a>
+    </div>
+</section>
+{% endblock %}

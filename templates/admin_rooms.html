@@ -1,0 +1,129 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Manage Rooms - Admin Panel{% endblock %}
+
+{% block content %}
+<style>
+    /* Same admin styles as above */
+    .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.5);
+        z-index: 2000;
+    }
+    .modal-content {
+        background: white;
+        margin: 5% auto;
+        padding: 30px;
+        width: 90%;
+        max-width: 600px;
+        border-radius: 20px;
+    }
+    .image-preview-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 10px;
+    }
+</style>
+
+<div class="admin-container">
+    <div class="container">
+        <div class="admin-grid">
+            <div class="admin-sidebar">
+                <h3 style="margin-bottom: 30px; color: var(--accent);">Admin Panel</h3>
+                <a href="/admin-dashboard/"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+                <a href="/admin-rooms/" class="active"><i class="fas fa-hotel"></i> Manage Rooms</a>
+                <a href="/admin-bookings/"><i class="fas fa-calendar-check"></i> Manage Bookings</a>
+                <a href="/logout/"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            </div>
+
+            <div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+                    <h1>Manage Rooms</h1>
+                    <button id="addRoomBtn" class="btn-export"><i class="fas fa-plus"></i> Add New Room</button>
+                </div>
+
+                <div class="recent-bookings">
+                    <div class="booking-table">
+                        <table>
+                            <thead>
+                                <tr><th>Room No</th><th>Type</th><th>Price</th><th>Capacity</th><th>Actions</th></tr>
+                            </thead>
+                            <tbody>
+                                {% for room in rooms %}
+                                <tr>
+                                    <td>{{ room.room_number }}</td>
+                                    <td>{{ room.get_room_type_display }}</td>
+                                    <td>${{ room.price_base }}</td>
+                                    <td>{{ room.capacity }}</td>
+                                    <td>
+                                        <button class="edit-room" data-id="{{ room.id }}" style="background: #007bff; color: white; padding: 5px 10px; border: none; border-radius: 5px;">Edit</button>
+                                        <button class="delete-room" data-id="{{ room.id }}" style="background: #dc3545; color: white; padding: 5px 10px; border: none; border-radius: 5px;">Delete</button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Room Modal -->
+<div id="addRoomModal" class="modal">
+    <div class="modal-content">
+        <h2>Add New Room</h2>
+        <form id="roomForm" method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="add">
+            <!-- Form fields -->
+            <div class="form-group">
+                <label>Room Number</label>
+                <input type="text" name="room_number" id="roomNumber" required>
+            </div>
+            <div class="form-group">
+                <label>Room Type</label>
+                <select name="room_type" required>...</select>
+            </div>
+            <div class="form-group">
+                <label>Price</label>
+                <input type="number" name="price_base" id="priceBase" required>
+            </div>
+            <div class="form-group">
+                <label>Capacity</label>
+                <input type="number" name="capacity" id="capacity" required>
+            </div>
+            
+            <!-- ========================================== -->
+            <!-- NEW: Total Inventory Input (এখানে বসানো হয়েছে) -->
+            <!-- ========================================== -->
+            <div class="form-group">
+                <label>Total Rooms Available (Inventory)</label>
+                <input type="number" name="total_inventory" id="total_inventory" min="1" value="5" required style="width: 100%; padding: 8px; margin-top: 5px; box-sizing: border-box;">
+                <small style="color: #666; display: block; margin-top: 5px;">এই টাইপের মোট কতগুলো রুম আপনার হোটেলে আছে (যেমন: ৫)</small>
+            </div>
+            <!-- ========================================== -->
+
+            <div class="form-group">
+                <label>Room Images</label>
+                <input type="file" name="room_images" id="roomImages" multiple accept="image/*">
+                <div id="imagePreview" class="image-preview-container"></div>
+            </div>
+            <button type="submit">Save Room</button>
+            <button type="button" class="close-modal">Cancel</button>
+        </form>
+    </div>
+</div>
+
+{% block extra_js %}
+<script src="{% static 'js/admin.js' %}"></script>
+{% endblock %}
+{% endblock %}

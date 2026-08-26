@@ -1,0 +1,575 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Manage Bookings - Admin Panel{% endblock %}
+
+{% block content %}
+<style>
+    .admin-container {
+        padding-top: 100px;
+        min-height: 100vh;
+        background: var(--gray-light);
+    }
+    .admin-sidebar {
+        background: var(--primary);
+        color: white;
+        padding: 2rem;
+        border-radius: 20px;
+        position: sticky;
+        top: 100px;
+    }
+    .admin-sidebar a {
+        color: white;
+        display: block;
+        padding: 12px 0;
+        text-decoration: none;
+        transition: var(--transition);
+    }
+    .admin-sidebar a:hover, .admin-sidebar a.active {
+        color: var(--accent);
+        padding-left: 10px;
+    }
+    .admin-sidebar i {
+        width: 25px;
+        margin-right: 10px;
+    }
+    .admin-grid {
+        display: grid;
+        grid-template-columns: 280px 1fr;
+        gap: 30px;
+    }
+    .bookings-table {
+        background: white;
+        border-radius: 20px;
+        padding: 25px;
+        overflow-x: auto;
+        box-shadow: var(--shadow-sm);
+    }
+    .filter-bar {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 25px;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+    .filter-bar input, .filter-bar select {
+        padding: 10px 15px;
+        border: 2px solid #e0e0e0;
+        border-radius: 10px;
+        font-size: 0.9rem;
+        min-width: 150px;
+    }
+    .filter-bar input:focus, .filter-bar select:focus {
+        border-color: var(--accent);
+        outline: none;
+    }
+    .btn-filter {
+        background: var(--accent);
+        color: var(--primary);
+        padding: 10px 25px;
+        border: none;
+        border-radius: 10px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: var(--transition);
+    }
+    .btn-filter:hover {
+        background: var(--accent-light);
+        transform: translateY(-2px);
+    }
+    .btn-export {
+        background: var(--primary);
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        margin-left: auto;
+    }
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    th, td {
+        padding: 12px;
+        text-align: left;
+        border-bottom: 1px solid #eee;
+    }
+    th {
+        background: var(--primary);
+        color: white;
+        font-weight: 600;
+    }
+    th:first-child { border-radius: 10px 0 0 10px; }
+    th:last-child { border-radius: 0 10px 10px 0; }
+    .status-badge {
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        display: inline-block;
+    }
+    .status-confirmed { background: #28a745; color: white; }
+    .status-pending { background: #ffc107; color: #333; }
+    .status-cancelled { background: #dc3545; color: white; }
+    .status-completed { background: #17a2b8; color: white; }
+    .payment-paid { background: #28a745; color: white; }
+    .payment-pending { background: #ffc107; color: #333; }
+    .payment-failed { background: #dc3545; color: white; }
+    .action-select {
+        padding: 6px 10px;
+        border-radius: 6px;
+        border: 1px solid #ddd;
+        background: white;
+        cursor: pointer;
+    }
+    .action-select:hover {
+        border-color: var(--accent);
+    }
+    .bulk-actions {
+        margin-top: 20px;
+        display: flex;
+        gap: 15px;
+        align-items: center;
+        padding-top: 20px;
+        border-top: 1px solid #eee;
+    }
+    .bulk-actions select {
+        padding: 10px 15px;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        min-width: 180px;
+    }
+    .btn-bulk {
+        background: var(--accent);
+        color: var(--primary);
+        padding: 10px 25px;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+    }
+    .booking-detail-modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.6);
+        z-index: 2000;
+        align-items: center;
+        justify-content: center;
+    }
+    .modal-content {
+        background: white;
+        max-width: 500px;
+        width: 90%;
+        border-radius: 20px;
+        padding: 30px;
+        max-height: 80vh;
+        overflow-y: auto;
+    }
+    .detail-row {
+        display: flex;
+        padding: 10px 0;
+        border-bottom: 1px solid #eee;
+    }
+    .detail-label {
+        font-weight: 600;
+        width: 120px;
+        color: var(--primary);
+    }
+    .detail-value {
+        flex: 1;
+        color: #333;
+    }
+    .close-modal {
+        float: right;
+        font-size: 1.5rem;
+        cursor: pointer;
+        color: #999;
+    }
+    .close-modal:hover {
+        color: var(--accent);
+    }
+    .checkbox-col {
+        width: 30px;
+    }
+    .view-details {
+        color: var(--accent);
+        cursor: pointer;
+        text-decoration: underline;
+    }
+    @media (max-width: 768px) {
+        .admin-grid {
+            grid-template-columns: 1fr;
+        }
+        .filter-bar {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        .btn-export {
+            margin-left: 0;
+        }
+        th, td {
+            font-size: 0.85rem;
+            padding: 8px;
+        }
+    }
+</style>
+
+<div class="admin-container">
+    <div class="container">
+        <div class="admin-grid">
+            <!-- Sidebar -->
+            <div class="admin-sidebar">
+                <h3 style="margin-bottom: 30px; color: var(--accent);">Admin Panel</h3>
+                <a href="/admin-dashboard/"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+                <a href="/admin-rooms/"><i class="fas fa-hotel"></i> Manage Rooms</a>
+                <a href="/admin-bookings/" class="active"><i class="fas fa-calendar-check"></i> Manage Bookings</a>
+                <a href="/logout/"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            </div>
+
+            <!-- Main Content -->
+            <div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; flex-wrap: wrap; gap: 15px;">
+                    <h1>Manage Bookings</h1>
+                    <button id="exportData" class="btn-export"><i class="fas fa-download"></i> Export to CSV</button>
+                </div>
+
+                <!-- Filter Bar -->
+                <div class="filter-bar">
+                    <select id="statusFilter">
+                        <option value="">All Status</option>
+                        <option value="pending">Pending</option>
+                        <option value="confirmed">Confirmed</option>
+                        <option value="cancelled">Cancelled</option>
+                        <option value="completed">Completed</option>
+                    </select>
+                    
+                    <select id="paymentFilter">
+                        <option value="">All Payments</option>
+                        <option value="paid">Paid</option>
+                        <option value="pending">Pending</option>
+                        <option value="failed">Failed</option>
+                    </select>
+                    
+                    <input type="date" id="dateFilter" placeholder="Filter by date">
+                    
+                    <input type="text" id="searchBookings" placeholder="Search by name, email, room..." style="flex: 1; min-width: 200px;">
+                    
+                    <button id="applyFilters" class="btn-filter"><i class="fas fa-search"></i> Apply Filters</button>
+                    <button id="resetFilters" class="btn-filter" style="background: #6c757d;"><i class="fas fa-undo"></i> Reset</button>
+                </div>
+
+                <!-- Bookings Table -->
+                <div class="bookings-table">
+                    <table id="bookingsTable">
+                        <thead>
+                            <tr>
+                                <th class="checkbox-col"><input type="checkbox" id="selectAll"></th>
+                                <th>ID</th>
+                                <th>Guest Name</th>
+                                <th>Email</th>
+                                <th>Room</th>
+                                <th>Plan</th>
+                                <th>Check In</th>
+                                <th>Check Out</th>
+                                <th>Guests</th>
+                                <th>Total</th>
+                                <th>Status</th>
+                                <th>Payment</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="bookingsTableBody">
+                            {% for booking in bookings %}
+                            <tr data-booking-id="{{ booking.id }}" data-status="{{ booking.status }}" data-payment="{{ booking.payment_status }}">
+                                <td><input type="checkbox" class="booking-checkbox" value="{{ booking.id }}"></td>
+                                <td>#{{ booking.id }}</td>
+                                <td>{{ booking.guest_name }}</td>
+                                <td>{{ booking.guest_email }}</td>
+                                <td>{{ booking.room.room_number }} ({{ booking.room.get_room_type_display }})</td>
+                                <td>{{ booking.room_plan.title|default:"Room Only" }}</td>
+                                <td>{{ booking.check_in|date:"Y-m-d" }}</td>
+                                <td>{{ booking.check_out|date:"Y-m-d" }}</td>
+                                <td>{{ booking.guests }}</td>
+                                <td>${{ booking.total_price|floatformat:2 }}</td>
+                                <td>
+                                    <span class="status-badge status-{{ booking.status }}">
+                                        {{ booking.status|title }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="status-badge payment-{{ booking.payment_status }}">
+                                        {{ booking.payment_status|title }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <select class="action-select status-update" data-id="{{ booking.id }}">
+                                        <option value="pending" {% if booking.status == 'pending' %}selected{% endif %}>Pending</option>
+                                        <option value="confirmed" {% if booking.status == 'confirmed' %}selected{% endif %}>Confirm</option>
+                                        <option value="cancelled" {% if booking.status == 'cancelled' %}selected{% endif %}>Cancel</option>
+                                        <option value="completed" {% if booking.status == 'completed' %}selected{% endif %}>Complete</option>
+                                    </select>
+                                    <br>
+                                    <span class="view-details" data-id="{{ booking.id }}" style="font-size: 0.8rem; cursor: pointer;">
+                                        <i class="fas fa-eye"></i> View Details
+                                    </span>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="13" style="text-align: center; padding: 40px;">
+                                    <i class="fas fa-calendar-times" style="font-size: 3rem; color: #ccc;"></i>
+                                    <p style="margin-top: 10px;">No bookings found</p>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+
+                    <!-- Bulk Actions -->
+                    <div class="bulk-actions">
+                        <select id="bulkAction">
+                            <option value="">Bulk Actions</option>
+                            <option value="confirm">Confirm Selected</option>
+                            <option value="cancel">Cancel Selected</option>
+                            <option value="complete">Mark as Completed</option>
+                            <option value="delete">Delete Selected</option>
+                        </select>
+                        <button id="applyBulk" class="btn-bulk">Apply to Selected</button>
+                        <span id="selectedCount" style="color: #666; margin-left: auto;">0 selected</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Booking Details Modal -->
+<div id="bookingDetailModal" class="booking-detail-modal">
+    <div class="modal-content">
+        <span class="close-modal">&times;</span>
+        <h2 style="color: var(--primary); margin-bottom: 20px;">Booking Details</h2>
+        <div id="modalDetails">
+            <!-- Dynamic content will be loaded here -->
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/admin.js' %}"></script>
+<script>
+    // Pass CSRF token to admin.js
+    window.csrfToken = "{{ csrf_token }}";
+    
+    // Additional booking-specific initialization
+    document.addEventListener('DOMContentLoaded', function() {
+        
+        // View booking details
+        const viewButtons = document.querySelectorAll('.view-details');
+        const modal = document.getElementById('bookingDetailModal');
+        const modalDetails = document.getElementById('modalDetails');
+        const closeModal = document.querySelector('.close-modal');
+        
+        viewButtons.forEach(btn => {
+            btn.addEventListener('click', async function() {
+                const bookingId = this.dataset.id;
+                
+                try {
+                    const response = await fetch(`/admin/booking-details/${bookingId}/`);
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        modalDetails.innerHTML = `
+                            <div class="detail-row">
+                                <div class="detail-label">Booking ID:</div>
+                                <div class="detail-value">#${data.booking.id}</div>
+                            </div>
+                            <div class="detail-row">
+                                <div class="detail-label">Guest Name:</div>
+                                <div class="detail-value">${data.booking.guest_name}</div>
+                            </div>
+                            <div class="detail-row">
+                                <div class="detail-label">Email:</div>
+                                <div class="detail-value">${data.booking.guest_email}</div>
+                            </div>
+                            <div class="detail-row">
+                                <div class="detail-label">Phone:</div>
+                                <div class="detail-value">${data.booking.guest_phone}</div>
+                            </div>
+                            <div class="detail-row">
+                                <div class="detail-label">Room:</div>
+                                <div class="detail-value">${data.booking.room_number} - ${data.booking.room_type}</div>
+                            </div>
+                            <div class="detail-row">
+                                <div class="detail-label">Plan:</div>
+                                <div class="detail-value">${data.booking.plan || 'Room Only'}</div>
+                            </div>
+                            <div class="detail-row">
+                                <div class="detail-label">Check In:</div>
+                                <div class="detail-value">${data.booking.check_in}</div>
+                            </div>
+                            <div class="detail-row">
+                                <div class="detail-label">Check Out:</div>
+                                <div class="detail-value">${data.booking.check_out}</div>
+                            </div>
+                            <div class="detail-row">
+                                <div class="detail-label">Nights:</div>
+                                <div class="detail-value">${data.booking.nights}</div>
+                            </div>
+                            <div class="detail-row">
+                                <div class="detail-label">Guests:</div>
+                                <div class="detail-value">${data.booking.guests}</div>
+                            </div>
+                            <div class="detail-row">
+                                <div class="detail-label">Total Price:</div>
+                                <div class="detail-value">$${data.booking.total_price}</div>
+                            </div>
+                            <div class="detail-row">
+                                <div class="detail-label">Status:</div>
+                                <div class="detail-value">${data.booking.status}</div>
+                            </div>
+                            <div class="detail-row">
+                                <div class="detail-label">Payment:</div>
+                                <div class="detail-value">${data.booking.payment_status}</div>
+                            </div>
+                            ${data.booking.special_requests ? `
+                            <div class="detail-row">
+                                <div class="detail-label">Special Requests:</div>
+                                <div class="detail-value">${data.booking.special_requests}</div>
+                            </div>
+                            ` : ''}
+                            <div class="detail-row">
+                                <div class="detail-label">Booked On:</div>
+                                <div class="detail-value">${data.booking.created_at}</div>
+                            </div>
+                        `;
+                        modal.style.display = 'flex';
+                    }
+                } catch (error) {
+                    console.error('Error fetching booking details:', error);
+                    alert('Could not load booking details');
+                }
+            });
+        });
+        
+        // Close modal
+        if (closeModal) {
+            closeModal.onclick = function() {
+                modal.style.display = 'none';
+            };
+        }
+        
+        window.onclick = function(event) {
+            if (event.target === modal) {
+                modal.style.display = 'none';
+            }
+        };
+        
+        // Update selected count
+        function updateSelectedCount() {
+            const checkboxes = document.querySelectorAll('.booking-checkbox:checked');
+            const countSpan = document.getElementById('selectedCount');
+            if (countSpan) {
+                countSpan.textContent = `${checkboxes.length} selected`;
+            }
+        }
+        
+        const checkboxes = document.querySelectorAll('.booking-checkbox');
+        checkboxes.forEach(cb => {
+            cb.addEventListener('change', updateSelectedCount);
+        });
+        
+        // Reset filters
+        const resetBtn = document.getElementById('resetFilters');
+        if (resetBtn) {
+            resetBtn.addEventListener('click', function() {
+                document.getElementById('statusFilter').value = '';
+                document.getElementById('paymentFilter').value = '';
+                document.getElementById('dateFilter').value = '';
+                document.getElementById('searchBookings').value = '';
+                
+                // Trigger filter
+                const filterBtn = document.getElementById('applyFilters');
+                if (filterBtn) filterBtn.click();
+            });
+        }
+        
+        // Real-time status update via AJAX
+        const statusSelects = document.querySelectorAll('.status-update');
+        statusSelects.forEach(select => {
+            select.addEventListener('change', async function() {
+                const bookingId = this.dataset.id;
+                const newStatus = this.value;
+                
+                if (confirm(`Change booking #${bookingId} status to ${newStatus}?`)) {
+                    try {
+                        const response = await fetch('/admin/update-booking-status/', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRFToken': window.csrfToken
+                            },
+                            body: JSON.stringify({
+                                booking_id: bookingId,
+                                status: newStatus
+                            })
+                        });
+                        
+                        const data = await response.json();
+                        
+                        if (data.success) {
+                            // Update status badge in the table
+                            const row = this.closest('tr');
+                            const statusCell = row.querySelector('.status-badge');
+                            if (statusCell) {
+                                statusCell.className = `status-badge status-${newStatus}`;
+                                statusCell.textContent = newStatus.charAt(0).toUpperCase() + newStatus.slice(1);
+                            }
+                            showToast(`Booking #${bookingId} updated to ${newStatus}`, 'success');
+                        } else {
+                            showToast('Error updating status', 'error');
+                            this.value = this.getAttribute('data-old') || 'pending';
+                        }
+                    } catch (error) {
+                        showToast('Network error', 'error');
+                    }
+                } else {
+                    this.value = this.getAttribute('data-old') || 'pending';
+                }
+            });
+            
+            // Store old value
+            select.setAttribute('data-old', select.value);
+            select.addEventListener('focus', function() {
+                this.setAttribute('data-old', this.value);
+            });
+        });
+    });
+    
+    // Toast notification function
+    function showToast(message, type = 'success') {
+        const toast = document.createElement('div');
+        toast.style.cssText = `
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: ${type === 'success' ? '#28a745' : '#dc3545'};
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            z-index: 9999;
+            animation: slideIn 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        `;
+        toast.innerHTML = message;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 3000);
+    }
+</script>
+{% endblock %}

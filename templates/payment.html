@@ -1,0 +1,273 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Payment - ÉCLAT Hotels{% endblock %}
+
+{% block content %}
+<style>
+    .payment-container {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #0f172a, #1e2a4a);
+        padding: 120px 20px 60px;
+    }
+    .payment-card {
+        background: white;
+        border-radius: 30px;
+        padding: 40px;
+        max-width: 500px;
+        width: 100%;
+        text-align: center;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+        animation: fadeInUp 0.6s ease;
+    }
+    .payment-icon {
+        font-size: 4rem;
+        color: #d4af37;
+        margin-bottom: 20px;
+    }
+    .payment-card h2 {
+        color: #0f172a;
+        margin-bottom: 30px;
+        font-family: 'Playfair Display', serif;
+    }
+    .payment-details {
+        background: #f8fafc; /* একটু সফট কালার দেওয়া হলো */
+        border-radius: 16px;
+        padding: 25px;
+        margin: 25px 0;
+        text-align: left;
+    }
+    .payment-details p {
+        margin: 12px 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start; /* ডানদিকের লেখা ভাঙলে লেবেল উপরে ফিক্সড থাকবে */
+        font-family: 'Inter', sans-serif;
+    }
+    
+    /* বামদিকের লেবেল এবং আইকনের ডিজাইন */
+    .payment-details p span:first-child {
+        color: #64748b;
+        white-space: nowrap; /* লেবেল ভাঙতে দেবে না */
+        flex-shrink: 0; /* লেবেলকে সঙ্কুচিত হতে দেবে না */
+        margin-right: 15px;
+    }
+    .payment-details p span:first-child i {
+        width: 25px; /* আইকনগুলো সোজা লাইনে রাখার জন্য */
+    }
+
+    /* ডানদিকের ভ্যালুগুলোর ডিজাইন */
+    .payment-details p span:last-child {
+        text-align: right;
+        line-height: 1.4;
+        word-wrap: break-word; /* বড় লেখা হলে সুন্দর করে পরের লাইনে নামিয়ে দেবে */
+        color: #0f172a;
+    }
+
+    .payment-details .total {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: #d4af37;
+        border-top: 2px solid #e2e8f0;
+        padding-top: 15px;
+        margin-top: 15px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .payment-details .total span:first-child {
+        color: #0f172a;
+    }
+    .btn-pay {
+        width: 100%;
+        background: #d4af37;
+        color: #0f172a;
+        padding: 16px;
+        border: none;
+        border-radius: 15px;
+        font-size: 1.1rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-family: 'Inter', sans-serif;
+    }
+    .btn-pay:hover {
+        background: #e8c857;
+        transform: translateY(-3px);
+    }
+    .secure-badge {
+        margin-top: 20px;
+        color: #8a8a8a;
+        font-size: 0.85rem;
+    }
+    .secure-badge i {
+        color: #d4af37;
+        margin: 0 5px;
+    }
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    @media (max-width: 768px) {
+        .payment-card {
+            padding: 30px 20px;
+        }
+    }
+</style>
+
+<div class="payment-container">
+    <div class="payment-card">
+        <div class="payment-icon">
+            <i class="fas fa-lock"></i>
+        </div>
+        <h2>Complete Your Payment</h2>
+        
+        <div class="payment-details">
+            <p>
+                <span><i class="fas fa-hotel"></i> Room:</span>
+                <span><strong>{{ room.get_room_type_display|default:'Deluxe Suite' }}</strong></span>
+            </p>
+            <p>
+                <span><i class="fas fa-tag"></i> Plan:</span>
+                <span><strong>{{ plan.title|default:'Room Only' }}</strong></span>
+            </p>
+            <p>
+                <span><i class="fas fa-calendar-alt"></i> Duration:</span>
+                <span><strong>{{ request.session.booking_data.check_in }} to {{ request.session.booking_data.check_out }}</strong></span>
+            </p>
+            <p>
+                <span><i class="fas fa-moon"></i> Nights:</span>
+                <span><strong>{{ request.session.booking_data.nights }} nights</strong></span>
+            </p>
+            <p>
+                <span><i class="fas fa-users"></i> Guests:</span>
+                <span><strong>{{ request.session.booking_data.guests }} guests</strong></span>
+            </p>
+            <div class="total">
+                <span>Total Amount:</span>
+                <span>INR {{ request.session.booking_data.total_price }}</span>
+            </div>
+        </div>
+        
+        <button id="rzp-button" class="btn-pay">
+            <i class="fas fa-rupee-sign"></i> Pay INR {{ request.session.booking_data.total_price }} Now
+        </button>
+        
+        <div class="secure-badge">
+            <i class="fas fa-shield-alt"></i> Secure Payment via Razorpay
+            <i class="fas fa-credit-card"></i> All Major Cards Accepted
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Get data from Django template
+        var razorpayKeyId = "{{ razorpay_key_id|escapejs }}";
+        var orderAmount = "{{ amount|default:0 }}";
+        var orderId = "{{ razorpay_order_id|escapejs }}";
+        var csrfToken = "{{ csrf_token|escapejs }}";
+        
+        // Get booking data from session
+        var bookingData = {
+            guest_name: "{{ request.session.booking_data.guest_name|escapejs|default:'Guest' }}",
+            guest_email: "{{ request.session.booking_data.guest_email|escapejs|default:'guest@example.com' }}",
+            guest_phone: "{{ request.session.booking_data.guest_phone|escapejs|default:'1234567890' }}"
+        };
+        
+        // Razorpay options
+        var options = {
+            key: razorpayKeyId,
+            amount: orderAmount,
+            currency: "INR",
+            name: "ÉCLAT Hotels",
+            description: "Room Booking Payment",
+            order_id: orderId,
+            prefill: {
+                name: bookingData.guest_name,
+                email: bookingData.guest_email,
+                contact: bookingData.guest_phone
+            },
+            theme: {
+                color: "#d4af37"
+            },
+            handler: function(response) {
+                console.log("Payment Success:", response);
+                console.log("Payment ID:", response.razorpay_payment_id);
+                console.log("Order ID:", response.razorpay_order_id);
+                console.log("Signature:", response.razorpay_signature);
+                
+                // Create form to submit payment details
+                var form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '/confirm-booking/';
+                form.style.display = 'none';
+                
+                // Add CSRF token
+                var csrfInput = document.createElement('input');
+                csrfInput.type = 'hidden';
+                csrfInput.name = 'csrfmiddlewaretoken';
+                csrfInput.value = csrfToken;
+                form.appendChild(csrfInput);
+                
+                // Add payment_id
+                var paymentId = document.createElement('input');
+                paymentId.type = 'hidden';
+                paymentId.name = 'razorpay_payment_id';
+                paymentId.value = response.razorpay_payment_id;
+                form.appendChild(paymentId);
+                
+                // Add order_id
+                var orderIdInput = document.createElement('input');
+                orderIdInput.type = 'hidden';
+                orderIdInput.name = 'razorpay_order_id';
+                orderIdInput.value = response.razorpay_order_id;
+                form.appendChild(orderIdInput);
+                
+                // Add signature
+                var signatureInput = document.createElement('input');
+                signatureInput.type = 'hidden';
+                signatureInput.name = 'razorpay_signature';
+                signatureInput.value = response.razorpay_signature;
+                form.appendChild(signatureInput);
+                
+                // Submit form
+                document.body.appendChild(form);
+                form.submit();
+            }
+        };
+        
+        // Initialize Razorpay
+        var rzp = new Razorpay(options);
+        
+        // Handle payment button click
+        var paymentButton = document.getElementById('rzp-button');
+        if (paymentButton) {
+            paymentButton.onclick = function(e) {
+                e.preventDefault();
+                console.log("Opening Razorpay checkout");
+                rzp.open();
+            };
+        }
+        
+        // Handle Razorpay events
+        rzp.on('payment.failed', function(response) {
+            console.log("Payment Failed:", response.error);
+            alert("Payment failed: " + response.error.description);
+            window.location.href = "/rooms/";
+        });
+    });
+</script>
+{% endblock %}

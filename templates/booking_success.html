@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Booking Confirmed - ÉCLAT Hotels{% endblock %}
+
+{% block content %}
+<style>
+    .success-container {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, var(--primary), #1e2a4a);
+        padding: 100px 20px;
+    }
+    .success-card {
+        background: white;
+        border-radius: 30px;
+        padding: 50px;
+        max-width: 500px;
+        width: 100%;
+        text-align: center;
+        box-shadow: var(--shadow-lg);
+        animation: fadeInUp 0.6s ease;
+    }
+    .success-icon {
+        font-size: 5rem;
+        color: #28a745;
+        margin-bottom: 20px;
+    }
+    .success-card h1 {
+        color: var(--primary);
+        margin-bottom: 10px;
+    }
+    .booking-details {
+        background: var(--gray-light);
+        border-radius: 20px;
+        padding: 25px;
+        margin: 25px 0;
+        text-align: left;
+    }
+    .booking-details p {
+        margin: 10px 0;
+        display: flex;
+        justify-content: space-between;
+    }
+    .btn-home {
+        background: var(--accent);
+        color: var(--primary);
+        padding: 12px 30px;
+        border-radius: 50px;
+        text-decoration: none;
+        font-weight: 600;
+        display: inline-block;
+        transition: var(--transition);
+    }
+    .btn-home:hover {
+        background: var(--accent-light);
+        transform: translateY(-2px);
+    }
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+</style>
+
+<div class="success-container">
+    <div class="success-card">
+        <i class="fas fa-check-circle success-icon"></i>
+        <h1>Booking Confirmed!</h1>
+        <p>Thank you for choosing ÉCLAT Hotels</p>
+        
+        <div class="booking-details">
+            <p><strong>Booking ID:</strong> <span>#{{ booking.id }}</span></p>
+            <p><strong>Room:</strong> <span>{{ room.get_room_type_display }}</span></p>
+            <p><strong>Guest:</strong> <span>{{ booking.guest_name }}</span></p>
+            <p><strong>Check-in:</strong> <span>{{ booking.check_in }}</span></p>
+            <p><strong>Check-out:</strong> <span>{{ booking.check_out }}</span></p>
+            <p><strong>Total Paid:</strong> <span>${{ booking.total_price }}</span></p>
+        </div>
+        
+        <a href="/" class="btn-home">Back to Home</a>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<style>
+    .about-hero {
+        height: 60vh;
+        background: linear-gradient(rgba(15,23,42,0.7), rgba(15,23,42,0.7)), url('https://images.unsplash.com/photo-1566073771259-6a8506099945');
+        background-size: cover;
+        background-position: center;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        color: white;
+        margin-top: 70px;
+    }
+    .about-hero h1 { font-size: 3rem; margin-bottom: 20px; }
+    .about-content { padding: 80px 0; }
+    .about-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 50px; align-items: center; }
+    .about-text h2 { margin-bottom: 20px; color: var(--primary); }
+    .about-text p { margin-bottom: 20px; line-height: 1.8; }
+    .about-image img { width: 100%; border-radius: 20px; box-shadow: var(--shadow-lg); }
+    .values-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; margin-top: 60px; }
+    .value-card { text-align: center; padding: 30px; background: white; border-radius: 20px; box-shadow: var(--shadow-sm); }
+    .value-card i { font-size: 3rem; color: var(--accent); margin-bottom: 20px; }
+    @media (max-width: 768px) {
+        .about-grid { grid-template-columns: 1fr; }
+        .values-grid { grid-template-columns: 1fr; }
+        .about-hero h1 { font-size: 2rem; }
+    }
+</style>
+
+<div class="about-hero">
+    <div>
+        <h1>Our Story</h1>
+        <p>Discover the essence of true luxury hospitality</p>
+    </div>
+</div>
+
+<section class="about-content">
+    <div class="container">
+        <div class="about-grid">
+            <div class="about-text">
+                <h2>A Legacy of Excellence</h2>
+                <p>Founded in 2010, ÉCLAT Hotels has redefined luxury hospitality by combining timeless elegance with modern comfort. Each of our properties is meticulously designed to provide an unparalleled experience for our discerning guests.</p>
+                <p>From our signature spa treatments to our Michelin-starred restaurants, every detail is curated to perfection. Our commitment to excellence has earned us recognition as one of the world's leading luxury hotel brands.</p>
+                <p>We believe that true luxury lies in the details - from the thread count of our linens to the warmth of our welcome. At ÉCLAT, we don't just host guests; we create unforgettable memories.</p>
+            </div>
+            <div class="about-image">
+                <img src="https://images.unsplash.com/photo-1542314831-068cd1dbfeeb" alt="Luxury Hotel Lobby">
+            </div>
+        </div>
+
+        <div class="values-grid">
+            <div class="value-card">
+                <i class="fas fa-gem"></i>
+                <h3>Excellence</h3>
+                <p>Uncompromising quality in every aspect of service</p>
+            </div>
+            <div class="value-card">
+                <i class="fas fa-heart"></i>
+                <h3>Passion</h3>
+                <p>Genuine care for our guests' comfort and satisfaction</p>
+            </div>
+            <div class="value-card">
+                <i class="fas fa-leaf"></i>
+                <h3>Sustainability</h3>
+                <p>Eco-friendly practices for a better tomorrow</p>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
